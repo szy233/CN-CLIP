@@ -148,3 +148,8 @@ core.*
 
 # Allow
 !src/evaluation/misc/results_dbs/*
+
+
+/cn_clip/clip/model_ernie/bert-ernie-mini.bin
+/cn_clip/clip/model_ernie/ernie-mini.bin
+/cn_clip/clip/model_ernie/test.py
