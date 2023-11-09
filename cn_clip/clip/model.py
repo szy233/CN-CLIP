@@ -12,14 +12,16 @@ from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 import importlib.util
+
+
 if importlib.util.find_spec('flash_attn'):
     FlashMHA = importlib.import_module('flash_attn.flash_attention').FlashMHA
 
-from cn_clip.clip import _tokenizer
+from cn_clip.clip import _tokenizer, tiny_vit
 from cn_clip.clip.configuration_bert import BertConfig
 from cn_clip.clip.modeling_bert import BertModel
 from transformers import MobileBertModel, MobileBertConfig
-
+from cn_clip.clip import torchsummary
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -297,17 +299,17 @@ class CLIP(nn.Module):
                  vision_width: int,
                  vision_patch_size: int,
                  # text
-                 vocab_size: int,
-                 text_attention_probs_dropout_prob: float,
-                 text_hidden_act: str,
-                 text_hidden_dropout_prob: float,
-                 text_hidden_size: int,
-                 text_initializer_range: float,
-                 text_intermediate_size: int,
-                 text_max_position_embeddings: int,
-                 text_num_attention_heads: int,
-                 text_num_hidden_layers: int,
-                 text_type_vocab_size: int,
+                 # vocab_size: int,
+                 # text_attention_probs_dropout_prob: float,
+                 # text_hidden_act: str,
+                 # text_hidden_dropout_prob: float,
+                 # text_hidden_size: int,
+                 # text_initializer_range: float,
+                 # text_intermediate_size: int,
+                 # text_max_position_embeddings: int,
+                 # text_num_attention_heads: int,
+                 # text_num_hidden_layers: int,
+                 # text_type_vocab_size: int,
                  tokenizer = _tokenizer,
                  # vision head width, added this param for ViT-H
                  vision_head_width: int = 64,
@@ -315,48 +317,49 @@ class CLIP(nn.Module):
                  ):
         super().__init__()
 
-        if isinstance(vision_layers, (tuple, list)):
-            vision_heads = vision_width * 32 // vision_head_width
-            self.visual = ModifiedResNet(
-                layers=vision_layers,
-                output_dim=embed_dim,
-                heads=vision_heads,
-                input_resolution=image_resolution,
-                width=vision_width
-            )
-        else:
-            vision_heads = vision_width // vision_head_width
-            self.visual = VisualTransformer(
-                input_resolution=image_resolution,
-                patch_size=vision_patch_size,
-                width=vision_width,
-                layers=vision_layers,
-                heads=vision_heads,
-                output_dim=embed_dim,
-                use_flash_attention=use_flash_attention
-            )
+        self.visual = tiny_vit.tiny_vit_21m_224(pretrained=False)
+        # if isinstance(vision_layers, (tuple, list)):
+        #     vision_heads = vision_width * 32 // vision_head_width
+        #     self.visual = ModifiedResNet(
+        #         layers=vision_layers,
+        #         output_dim=embed_dim,
+        #         heads=vision_heads,
+        #         input_resolution=image_resolution,
+        #         width=vision_width
+        #     )
+        # else:
+        #     vision_heads = vision_width // vision_head_width
+        #     self.visual = VisualTransformer(
+        #         input_resolution=image_resolution,
+        #         patch_size=vision_patch_size,
+        #         width=vision_width,
+        #         layers=vision_layers,
+        #         heads=vision_heads,
+        #         output_dim=embed_dim,
+        #         use_flash_attention=use_flash_attention
+        #     )
 
-        self.bert_config = BertConfig(
-            vocab_size_or_config_json_file=vocab_size,
-            hidden_size=text_hidden_size,
-            num_hidden_layers=text_num_hidden_layers,
-            num_attention_heads=text_num_attention_heads,
-            intermediate_size=text_intermediate_size,
-            hidden_act=text_hidden_act,
-            hidden_dropout_prob=text_hidden_dropout_prob,
-            attention_probs_dropout_prob=text_attention_probs_dropout_prob,
-            max_position_embeddings=text_max_position_embeddings,
-            type_vocab_size=text_type_vocab_size,
-            initializer_range=text_initializer_range,
-            layer_norm_eps=1e-12,
-            use_flash_attention=use_flash_attention
-        )
-        self.bert = BertModel(self.bert_config)
-        # self.bert_config = MobileBertConfig.from_json_file('/home/szy/cnclip/cn_clip/clip/model_configs/MobileBERT.json')
-        # self.bert = MobileBertModel(self.bert_config, add_pooling_layer=False)
+        # self.bert_config = BertConfig(
+        #     vocab_size_or_config_json_file=vocab_size,
+        #     hidden_size=text_hidden_size,
+        #     num_hidden_layers=text_num_hidden_layers,
+        #     num_attention_heads=text_num_attention_heads,
+        #     intermediate_size=text_intermediate_size,
+        #     hidden_act=text_hidden_act,
+        #     hidden_dropout_prob=text_hidden_dropout_prob,
+        #     attention_probs_dropout_prob=text_attention_probs_dropout_prob,
+        #     max_position_embeddings=text_max_position_embeddings,
+        #     type_vocab_size=text_type_vocab_size,
+        #     initializer_range=text_initializer_range,
+        #     layer_norm_eps=1e-12,
+        #     use_flash_attention=use_flash_attention
+        # )
+        # self.bert = BertModel(self.bert_config)
+        self.bert_config = MobileBertConfig.from_json_file('/home/szy/cnclip/cn_clip/clip/model_configs/MobileBERT.json')
+        self.bert = MobileBertModel(self.bert_config, add_pooling_layer=False)
 
-        # self.text_projection = nn.Parameter(torch.empty(self.bert_config.hidden_size, embed_dim))
-        self.text_projection = nn.Parameter(torch.empty(text_hidden_size, embed_dim))
+        self.text_projection = nn.Parameter(torch.empty(self.bert_config.hidden_size, 512))
+        # self.text_projection = nn.Parameter(torch.empty(text_hidden_size, embed_dim))
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
         self.tokenizer = tokenizer
@@ -389,13 +392,15 @@ class CLIP(nn.Module):
 
     @property
     def dtype(self):
-        return self.visual.conv1.weight.dtype
+        # return self.visual.conv1.weight.dtype
+        return torch.float32
 
     def encode_image(self, image, mask_ratio=0):
         if isinstance(self.visual, ModifiedResNet):
             # mask_ratio > 0 (FLIP strategy) is currently only implemented for VisualTransformer.
             return self.visual(image.type(self.dtype))
-        return self.visual(image.type(self.dtype), mask_ratio)
+        return self.visual(image.type(self.dtype))
+        # return self.visual(image.type(self.dtype), mask_ratio)
 
     def encode_text(self, text):
         pad_index = self.tokenizer.vocab['[PAD]']
@@ -464,8 +469,13 @@ def convert_weights(model: nn.Module):
         for name in ["text_projection", "proj"]:
             if hasattr(l, name):
                 attr = getattr(l, name)
-                if attr is not None:
-                    attr.data = attr.data.half()
+                if isinstance(attr, (nn.Linear)):
+                    attr.weight.data = attr.weight.data.half()
+                    if attr.bias is not None:
+                        attr.bias.data = attr.bias.data.half()
+                else:
+                    if attr is not None:
+                        attr.data = attr.data.half()
 
     model.apply(_convert_weights_to_fp16)
 

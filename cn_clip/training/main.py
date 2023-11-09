@@ -83,16 +83,17 @@ def main():
     text_model_config_file = Path(__file__).parent.parent / f"clip/model_configs/{args.text_model.replace('/', '-')}.json"
     print('Loading text model config from', text_model_config_file)
     assert os.path.exists(text_model_config_file)
-    
+
     with open(vision_model_config_file, 'r') as fv, open(text_model_config_file, 'r') as ft:
         model_info = json.load(fv)
-        if isinstance(model_info['vision_layers'], str):
-            model_info['vision_layers'] = eval(model_info['vision_layers'])         
-        for k, v in json.load(ft).items():
-            model_info[k] = v
+        # if isinstance(model_info['vision_layers'], str):
+        #     model_info['vision_layers'] = eval(model_info['vision_layers'])
+        # for k, v in json.load(ft).items():
+        #     model_info[k] = v
     model_info['use_flash_attention'] = args.use_flash_attention
 
     model = CLIP(**model_info)
+
     if args.clip_weight_path is not None:
         assert os.path.exists(args.clip_weight_path), "Pretrained CLIP weight not exists!"
     if args.bert_weight_path is not None:
@@ -272,11 +273,11 @@ def main():
                 save_path = os.path.join(args.checkpoint_path, f"epoch{epoch + 1}.pt")
                 torch.save(
                     {
-                        "epoch": epoch + 1,
-                        "step": steps,
-                        "name": args.name,
+                        # "epoch": epoch + 1,
+                        # "step": steps,
+                        # "name": args.name,
                         "state_dict": model.state_dict() if not args.use_flash_attention else convert_state_dict(model.state_dict()),
-                        "optimizer": optimizer.state_dict(),
+                        # "optimizer": optimizer.state_dict(),
                     },
                     save_path,
                 )
@@ -287,11 +288,11 @@ def main():
             save_path = os.path.join(args.checkpoint_path, f"epoch_latest.pt")
             torch.save(
                 {
-                    "epoch": epoch + 1,
-                    "step": steps,
-                    "name": args.name,
+                    # "epoch": epoch + 1,
+                    # "step": steps,
+                    # "name": args.name,
                     "state_dict": model.state_dict() if not args.use_flash_attention else convert_state_dict(model.state_dict()),
-                    "optimizer": optimizer.state_dict(),
+                    # "optimizer": optimizer.state_dict(),
                 },
                 save_path,
             )

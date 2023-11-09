@@ -14,7 +14,7 @@ WORKER_CNT=1
 # The ip address of the rank-0 worker, for single-worker training, please set to localhost
 export MASTER_ADDR=localhost
 # The port for communication
-export MASTER_PORT=8514
+export MASTER_PORT=8515
 # The rank of this worker, should be in {0, ..., WORKER_CNT-1}, for single-worker training, please set to 0
 export RANK=0 
 
@@ -53,8 +53,9 @@ max_epochs=3 # or you can alternatively specify --max-steps
 valid_step_interval=150
 valid_epoch_interval=1
 vision_model=ViT-B-16
-#text_model=MobileBERT
-text_model=RoBERTa-wwm-ext-base-chinese
+#vision_model=tinyvit
+text_model=MobileBERT
+#text_model=RoBERTa-wwm-ext-base-chinese
 use_augment="--use-augment"
 # use_augment=""
 
