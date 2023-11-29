@@ -152,8 +152,8 @@ def parse_args():
     )
     parser.add_argument(
         "--text-model",
-        choices=["RoBERTa-wwm-ext-base-chinese", "RoBERTa-wwm-ext-large-chinese", "RBT3-chinese", "MobileBERT"],
-        default="RoBERTa-wwm-ext-base-chinese",
+        choices=["RoBERTa-wwm-ext-base-chinese", "RoBERTa-wwm-ext-large-chinese", "RBT3-chinese", "MobileBERT", "Ernie-Mini"],
+        default="Ernie-Mini",
         help="Name of the text backbone to use.",
     )    
     parser.add_argument(

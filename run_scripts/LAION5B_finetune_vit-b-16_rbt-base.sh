@@ -8,7 +8,7 @@
 # Command: bash run_scripts/muge_finetune_vit-b-16_rbt-base.sh ${DATAPATH}
 
 # Number of GPUs per GPU worker
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 # Number of GPU workers, for single-worker training, please set to 1
 WORKER_CNT=1
 # The ip address of the rank-0 worker, for single-worker training, please set to localhost
@@ -23,18 +23,18 @@ export PYTHONPATH=${PYTHONPATH}:`pwd`/cn_clip/
 DATAPATH=${1}
 
 # data options
-train_data=${DATAPATH}/datasets/LAION-5B/lmdb/train
+train_data=${DATAPATH}/datasets/LAION-2B/lmdb/train
 val_data=${DATAPATH}/datasets/LAION-5B/lmdb/valid # if val_data is not specified, the validation will be automatically disabled
 
 # restore options
-resume=${DATAPATH}/pretrained_weights/clip_cn_vit-b-16.pt # or specify your customed ckpt path to resume
+resume=${DATAPATH}/experiments/LAION-2B_tinyvit_ernie/checkpoints/epoch_latest.pt # or specify your customed ckpt path to resume
 reset_data_offset="--reset-data-offset"
-reset_optimizer="--reset-optimizer"
-# reset_optimizer=""
+#reset_optimizer="--reset-optimizer"
+ reset_optimizer=""
 
 # output options
 output_base_dir=${DATAPATH}/experiments/
-name=LAION-5B_vit-b-16_mobilebert
+name=LAION-2B_tinyvit_ernie
 save_step_frequency=999999 # disable it
 save_epoch_frequency=1
 log_interval=1
@@ -44,17 +44,17 @@ report_training_batch_acc="--report-training-batch-acc"
 # training hyper-params
 context_length=52
 warmup=100
-batch_size=64
-valid_batch_size=32
+batch_size=200
+valid_batch_size=200
 accum_freq=1
 lr=5e-5
 wd=0.001
 max_epochs=3 # or you can alternatively specify --max-steps
-valid_step_interval=150
+valid_step_interval=200
 valid_epoch_interval=1
 vision_model=ViT-B-16
 #vision_model=tinyvit
-text_model=MobileBERT
+text_model=Ernie-Mini
 #text_model=RoBERTa-wwm-ext-base-chinese
 use_augment="--use-augment"
 # use_augment=""

@@ -88,8 +88,8 @@ def main():
         model_info = json.load(fv)
         # if isinstance(model_info['vision_layers'], str):
         #     model_info['vision_layers'] = eval(model_info['vision_layers'])
-        # for k, v in json.load(ft).items():
-        #     model_info[k] = v
+        for k, v in json.load(ft).items():
+            model_info[k] = v
     model_info['use_flash_attention'] = args.use_flash_attention
 
     model = CLIP(**model_info)
@@ -273,11 +273,11 @@ def main():
                 save_path = os.path.join(args.checkpoint_path, f"epoch{epoch + 1}.pt")
                 torch.save(
                     {
-                        # "epoch": epoch + 1,
-                        # "step": steps,
-                        # "name": args.name,
+                        "epoch": epoch + 1,
+                        "step": steps,
+                        "name": args.name,
                         "state_dict": model.state_dict() if not args.use_flash_attention else convert_state_dict(model.state_dict()),
-                        # "optimizer": optimizer.state_dict(),
+                        "optimizer": optimizer.state_dict(),
                     },
                     save_path,
                 )
@@ -288,11 +288,11 @@ def main():
             save_path = os.path.join(args.checkpoint_path, f"epoch_latest.pt")
             torch.save(
                 {
-                    # "epoch": epoch + 1,
-                    # "step": steps,
-                    # "name": args.name,
+                    "epoch": epoch + 1,
+                    "step": steps,
+                    "name": args.name,
                     "state_dict": model.state_dict() if not args.use_flash_attention else convert_state_dict(model.state_dict()),
-                    # "optimizer": optimizer.state_dict(),
+                    "optimizer": optimizer.state_dict(),
                 },
                 save_path,
             )

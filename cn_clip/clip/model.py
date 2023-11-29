@@ -299,17 +299,20 @@ class CLIP(nn.Module):
                  vision_width: int,
                  vision_patch_size: int,
                  # text
-                 # vocab_size: int,
-                 # text_attention_probs_dropout_prob: float,
-                 # text_hidden_act: str,
-                 # text_hidden_dropout_prob: float,
-                 # text_hidden_size: int,
-                 # text_initializer_range: float,
-                 # text_intermediate_size: int,
-                 # text_max_position_embeddings: int,
-                 # text_num_attention_heads: int,
-                 # text_num_hidden_layers: int,
-                 # text_type_vocab_size: int,
+                 vocab_size: int,
+                 text_attention_probs_dropout_prob: float,
+                 text_hidden_act: str,
+                 text_hidden_dropout_prob: float,
+                 text_hidden_size: int,
+                 text_initializer_range: float,
+                 text_intermediate_size: int,
+                 text_max_position_embeddings: int,
+                 text_num_attention_heads: int,
+                 text_num_hidden_layers: int,
+                 text_type_vocab_size: int,
+                 text_layer_norm_eps: int,
+                 output_attentions: bool,
+                 output_hidden_states: bool,
                  tokenizer = _tokenizer,
                  # vision head width, added this param for ViT-H
                  vision_head_width: int = 64,
@@ -354,12 +357,29 @@ class CLIP(nn.Module):
         #     layer_norm_eps=1e-12,
         #     use_flash_attention=use_flash_attention
         # )
-        # self.bert = BertModel(self.bert_config)
-        self.bert_config = MobileBertConfig.from_json_file('/home/szy/cnclip/cn_clip/clip/model_configs/MobileBERT.json')
-        self.bert = MobileBertModel(self.bert_config, add_pooling_layer=False)
-
-        self.text_projection = nn.Parameter(torch.empty(self.bert_config.hidden_size, 512))
-        # self.text_projection = nn.Parameter(torch.empty(text_hidden_size, embed_dim))
+        self.bert_config = BertConfig(
+                vocab_size_or_config_json_file=vocab_size,
+                hidden_size=text_hidden_size,
+                num_hidden_layers=text_num_hidden_layers,
+                num_attention_heads=text_num_attention_heads,
+                intermediate_size=text_intermediate_size,
+                hidden_act=text_hidden_act,
+                hidden_dropout_prob=text_hidden_dropout_prob,
+                attention_probs_dropout_prob=text_attention_probs_dropout_prob,
+                max_position_embeddings=text_max_position_embeddings,
+                type_vocab_size=text_type_vocab_size,
+                initializer_range=text_initializer_range,
+                layer_norm_eps=text_layer_norm_eps,
+                use_flash_attention=use_flash_attention,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states
+            )
+        self.bert = BertModel(self.bert_config)
+        # self.bert_config = MobileBertConfig.from_json_file('/home/szy/cnclip/cn_clip/clip/model_configs/MobileBERT.json')
+        # self.bert = MobileBertModel(self.bert_config, add_pooling_layer=False)
+        #
+        # self.text_projection = nn.Parameter(torch.empty(self.bert_config.hidden_size, 512))
+        self.text_projection = nn.Parameter(torch.empty(text_hidden_size, embed_dim))
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
         self.tokenizer = tokenizer
